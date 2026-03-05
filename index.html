@@ -74,6 +74,7 @@ function PurchaseLanding() {
   const [month, setMonth] = useState(null); // date -> month로 변경
   const [expandedFaq, setExpandedFaq] = useState(null);
   const[showToast, setShowToast] = useState(false);
+  const[toastData, setToastData] = useState(null); // 추가된 상태
   const [viewers, setViewers] = useState(64); // 실시간 방문자 수
 
   const [quizStep, setQuizStep] = useState(0); 
@@ -104,6 +105,38 @@ function PurchaseLanding() {
       setViewers(Math.max(5, Math.floor(base + wave + noise)));
     };
 
+    useEffect(() => {
+    let timeoutId;
+    let hideTimeoutId;
+    
+    const showNextToast = () => {
+      const conceptsList =["호캉스", "숲캉스", "힙캉스", "반반 믹스매치"];
+      const randomConcept = conceptsList[Math.floor(Math.random() * conceptsList.length)];
+      // 전화번호 끝 4자리 생성 로직 (예: 6*80)
+      const randomNum1 = Math.floor(Math.random() * 10);
+      const randomNum2 = Math.floor(Math.random() * 10);
+      const phoneEnd = `${Math.floor(Math.random() * 9 + 1)}${randomNum1}*${randomNum2}`;
+      const randomMin = Math.floor(Math.random() * 5) + 1; // 1~5분 전
+      
+      setToastData({ phone: phoneEnd, concept: randomConcept, min: randomMin });
+      setShowToast(true);
+      
+      // 4초 후 토스트 닫기
+      hideTimeoutId = setTimeout(() => setShowToast(false), 4000);
+      
+      // 다음 토스트는 15초 ~ 45초 사이 랜덤 발생
+      const nextDelay = Math.floor(Math.random() * 30000) + 15000;
+      timeoutId = setTimeout(showNextToast, nextDelay);
+    };
+
+    // 최초 진입 3초 후 첫 토스트 팝업
+    timeoutId = setTimeout(showNextToast, 3000);
+    return () => {
+      clearTimeout(timeoutId);
+      clearTimeout(hideTimeoutId);
+    };
+  },[]);
+    
     updateViewers();
     const intervalId = setInterval(updateViewers, 3000); 
     return () => clearInterval(intervalId);
@@ -222,13 +255,13 @@ function PurchaseLanding() {
   };
 
   const months =[
-    { id: "m4", label: "4월 출발", seats: 12, hot: false },
-    { id: "m5", label: "5월 출발 (가정의 달)", seats: 5, hot: true },
-    { id: "m6", label: "6월 출발", seats: 18, hot: false },
-    { id: "m7", label: "7월 출발 (여름 휴가)", seats: 4, hot: true },
-    { id: "m8", label: "8월 출발 (여름 휴가)", seats: 6, hot: true },
-    { id: "m9", label: "9월 출발 (추석 연휴 포함)", seats: 9, hot: false },
-    { id: "m10", label: "10월 출발 (징검다리 연휴)", seats: 24, hot: false },
+    { id: "m4", label: "4월 출발", status: "normal" },
+    { id: "m5", label: "5월 출발 (가정의 달)", status: "popular" }, // 주황색(warm) 톤
+    { id: "m6", label: "6월 출발", status: "normal" },
+    { id: "m7", label: "7월 출발 (여름 휴가)", status: "warning" }, // 빨간색(red) 톤
+    { id: "m8", label: "8월 출발 (여름 휴가)", status: "warning" },
+    { id: "m9", label: "9월 출발 (추석 연휴 포함)", status: "normal" },
+    { id: "m10", label: "10월 출발 (징검다리 연휴)", status: "normal" },
   ];
 
   const priceDetails =[
@@ -251,7 +284,7 @@ function PurchaseLanding() {
 
   return (
     <div style={{ fontFamily: font, background: T.bg, minHeight: "100vh", maxWidth: 480, margin: "0 auto", position: "relative" }}>
-      {showToast && (
+      {showToast && toastData && (
         <div onClick={() => setShowToast(false)} style={{
           position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)",
           zIndex: 200, maxWidth: 420, width: "calc(100% - 32px)",
@@ -265,8 +298,8 @@ function PurchaseLanding() {
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0,
           }}>✈️</div>
           <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>서울 김** 님이 <span style={{ color: T.green }}>반반 믹스매치</span> 예약 완료!</div>
-            <div style={{ fontSize: 10, color: T.muted, marginTop: 1 }}>3분 전</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>끝자리 {toastData.phone}님이 <span style={{ color: T.green }}>{toastData.concept}</span> 예약 완료!</div>
+            <div style={{ fontSize: 10, color: T.muted, marginTop: 1 }}>{toastData.min}분 전</div>
           </div>
           <div style={{ marginLeft: "auto", fontSize: 10, color: T.muted }}>✕</div>
         </div>
@@ -556,23 +589,46 @@ function PurchaseLanding() {
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {months.map(m => {
                 const sel = month === m.id;
+                const isWarning = m.status === "warning";
+                const isPopular = m.status === "popular";
+                
+                let borderColor = T.border;
+                let bgColor = "#fff";
+                if (sel) {
+                  borderColor = T.green;
+                  bgColor = T.greenLight;
+                } else if (isWarning) {
+                  borderColor = T.red;
+                  bgColor = T.redLight;
+                } else if (isPopular) {
+                  borderColor = T.warm;
+                  bgColor = T.warmLight;
+                }
+
+                let statusColor = T.muted;
+                let statusText = "";
+                if (isWarning) { statusColor = T.red; statusText = "⚡ 마감임박"; }
+                else if (isPopular) { statusColor = T.warm; statusText = "🔥 시즌인기"; }
+
                 return (
                   <button key={m.id} onClick={() => setMonth(m.id)} style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
                     padding: "14px 16px", borderRadius: 12, width: "100%", cursor: "pointer",
-                    border: sel ? `2px solid ${T.green}` : m.hot ? `1.5px solid ${T.red}` : `1.5px solid ${T.border}`,
-                    background: sel ? T.greenLight : m.hot ? T.redLight : "#fff",
+                    border: sel ? `2px solid ${T.green}` : `1.5px solid ${borderColor}`,
+                    background: bgColor,
                     transition: "all 0.2s",
                   }}>
                     <div style={{ textAlign: "left" }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{m.label}</div>
-                      <div style={{
-                        fontSize: 11, marginTop: 3,
-                        color: m.hot ? T.red : T.muted,
-                        fontWeight: m.hot ? 700 : 400,
-                      }}>
-                        {m.hot ? "⚡ 마감임박 " : ""}잔여 {m.seats}석
-                      </div>
+                      {statusText && (
+                        <div style={{
+                          fontSize: 11, marginTop: 3,
+                          color: statusColor,
+                          fontWeight: 700,
+                        }}>
+                          {statusText}
+                        </div>
+                      )}
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>────── 원</div>
                   </button>
@@ -887,7 +943,6 @@ function PurchaseLanding() {
           <div style={{ fontSize: 10, color: T.muted }}>선택 상품 합계</div>
           <div style={{ fontSize: 18, fontWeight: 800, color: T.text }}>
             ────── <span style={{ fontSize: 12, fontWeight: 500 }}>원</span>
-            <span style={{ fontSize: 10, color: T.red, fontWeight: 600, marginLeft: 6 }}>잔여 N석</span>
           </div>
         </div>
         <button style={{
