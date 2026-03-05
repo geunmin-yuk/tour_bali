@@ -9,9 +9,917 @@
   <div id="root"></div>
   
   <script type="text/babel">
-    function App() {
-      return <h1>안녕하세요! 깃허브 온라인에서 띄운 JSX입니다.</h1>;
+import { useState, useEffect, useRef } from "react";
+
+// ─── Design tokens ───
+const T = {
+  bg: "#FAF8F5",
+  card: "#FFFFFF",
+  green: "#1A6B4A",
+  greenDark: "#0E4832",
+  greenLight: "#E6F4ED",
+  greenMid: "#D0EADB",
+  warm: "#C9956B",
+  warmLight: "#FFF7F0",
+  warmBg: "#FAF0E6",
+  red: "#C0392B",
+  redLight: "#FFF0ED",
+  gold: "#B08530",
+  goldLight: "#FEF9EF",
+  text: "#1C1C1C",
+  sub: "#555555",
+  muted: "#999999",
+  border: "#E8E4DF",
+  borderLight: "#F2EFEA",
+};
+
+const font = `'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+
+// ─── Countdown hook ───
+function useCountdown(targetDate) {
+  const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 });
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      const diff = Math.max(0, targetDate - now);
+      setTimeLeft({
+        d: Math.floor(diff / 86400000),
+        h: Math.floor((diff % 86400000) / 3600000),
+        m: Math.floor((diff % 3600000) / 60000),
+        s: Math.floor((diff % 60000) / 1000),
+      });
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [targetDate]);
+  return timeLeft;
+}
+
+// ─── Reusable components ───
+const Badge = ({ children, bg, color }) => (
+  <span style={{
+    display: "inline-block", fontSize: 10, fontWeight: 700, letterSpacing: 0.3,
+    padding: "3px 10px", borderRadius: 20, background: bg, color,
+  }}>{children}</span>
+);
+
+const SectionTitle = ({ step, title, sub }) => (
+  <div style={{ marginBottom: 16 }}>
+    {step && <Badge bg={T.green} color="#fff">{step}</Badge>}
+    <h2 style={{
+      fontSize: 18, fontWeight: 800, color: T.text, margin: step ? "10px 0 4px" : "0 0 4px",
+      lineHeight: 1.4, fontFamily: font,
+    }}>{title}</h2>
+    {sub && <p style={{ fontSize: 13, color: T.muted, margin: 0, lineHeight: 1.5 }}>{sub}</p>}
+  </div>
+);
+
+const Divider = () => (
+  <div style={{ height: 1, background: T.borderLight, margin: "28px 0" }} />
+);
+
+// ─── Main component ───
+export default function PurchaseLanding() {
+  const [concept, setConcept] = useState(null);
+  const [hotel, setHotel] = useState(null);
+  const [date, setDate] = useState(null);
+  const [expandedFaq, setExpandedFaq] = useState(null);
+  const [showToast, setShowToast] = useState(false);
+
+  // Quiz state
+  const [quizStep, setQuizStep] = useState(0); // 0=intro, 1~3=questions, 4=result
+  const [quizAnswers, setQuizAnswers] = useState([]);
+  const [quizResult, setQuizResult] = useState(null);
+  const step1Ref = useRef(null);
+
+  const quizQuestions = [
+    {
+      q: "발리에서의 첫 아침, 어떤 소리와 함께 눈뜨고 싶어요?",
+      options: [
+        { emoji: "🌊", text: "잔잔한 파도 소리와 새하얀 커튼 사이로 들어오는 햇살", tags: ["ho"] },
+        { emoji: "🌿", text: "새소리와 정글 속 물 흐르는 소리", tags: ["sup"] },
+        { emoji: "🎵", text: "감각적인 카페 음악과 서퍼들의 활기찬 에너지", tags: ["hip"] },
+        { emoji: "🤔", text: "솔직히 다 좋아서 못 고르겠어요", tags: ["mix"] },
+      ],
+    },
+    {
+      q: "여행에서 가장 기대되는 순간은?",
+      options: [
+        { emoji: "🍹", text: "풀장 베드에 누워 칵테일 마시며 아무것도 안 하는 시간", tags: ["ho"] },
+        { emoji: "🧘", text: "초록 속에서 요가하고 쿠킹 클래스 듣는 힐링 타임", tags: ["sup"] },
+        { emoji: "📸", text: "비치클럽에서 선셋 보며 인생샷 남기는 순간", tags: ["hip"] },
+        { emoji: "✨", text: "힐링도 하고 핫플도 가고, 다 해보고 싶어요!", tags: ["mix"] },
+      ],
+    },
+    {
+      q: "여행 후 SNS에 올릴 한 장을 고른다면?",
+      options: [
+        { emoji: "🏖️", text: "프라이빗 비치에서 찍은 리조트 인증샷", tags: ["ho"] },
+        { emoji: "🌴", text: "열대 우림이 병풍처럼 펼쳐진 풀빌라 사진", tags: ["sup"] },
+        { emoji: "🌅", text: "짱구 해변 오렌지빛 선셋 + 칵테일 한 잔", tags: ["hip"] },
+        { emoji: "🎞️", text: "정글 + 비치 + 카페 = 알찬 하이라이트 콜라주", tags: ["mix"] },
+      ],
+    },
+  ];
+
+  const getQuizResult = (answers) => {
+    const count = { ho: 0, sup: 0, hip: 0, mix: 0 };
+    answers.forEach(a => a.tags.forEach(t => count[t]++));
+    // mix answers always win if selected, otherwise highest
+    if (count.mix >= 2) return "mix";
+    const sorted = Object.entries(count).sort((a, b) => b[1] - a[1]);
+    return sorted[0][0];
+  };
+
+  const handleQuizAnswer = (option) => {
+    const newAnswers = [...quizAnswers, option];
+    setQuizAnswers(newAnswers);
+    if (newAnswers.length >= 3) {
+      const result = getQuizResult(newAnswers);
+      setQuizResult(result);
+      setQuizStep(4);
+    } else {
+      setQuizStep(quizStep + 1);
     }
+  };
+
+  const applyQuizResult = () => {
+    setConcept(quizResult);
+    setHotel(null);
+    setQuizStep(5); // done, hide quiz
+    setTimeout(() => {
+      step1Ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 200);
+  };
+
+  const resetQuiz = () => {
+    setQuizStep(0);
+    setQuizAnswers([]);
+    setQuizResult(null);
+  };
+
+  const resultMap = {
+    ho: { emoji: "🌊", name: "호캉스 파", area: "누사두아", desc: "럭셔리한 리조트 풀장 베드에 누워 칵테일 마시며 뼛속까지 쉬는 게 당신 스타일! 프라이빗 비치와 올인클루시브로 지갑 걱정 없는 완벽한 휴양이 기다리고 있어요." },
+    sup: { emoji: "🌿", name: "숲캉스 파", area: "우붓", desc: "새소리 들리는 초록 정글에서 요가하고, 쿠킹 클래스 들으며 조용히 힐링하는 당신! 발리의 예술적인 감성과 온전한 휴식을 우붓에서 만끽하세요." },
+    hip: { emoji: "🏄‍♀️", name: "힙캉스 파", area: "스미냑 & 짱구", desc: "비치클럽, 서핑, 감각적인 카페! 트렌디한 발리의 에너지를 제대로 느끼고 싶은 당신에게 스미냑과 짱구가 딱이에요." },
+    mix: { emoji: "⚖️", name: "반반 믹스매치 파", area: "우붓 + 짱구/스미냑", desc: "힐링도 하고 싶고 핫플도 못 참는 당신! 2박은 정글 힐링, 2박은 핫플 투어로 발리의 매력을 빠짐없이 쏙쏙 뽑아 먹는 완벽한 코스에요." },
+  };
+
+  // 3/8 24:00 KST
+  const deadline = new Date("2026-03-08T15:00:00Z");
+  const countdown = useCountdown(deadline);
+
+  // Toast animation
+  useEffect(() => {
+    const id = setTimeout(() => setShowToast(true), 3000);
+    return () => clearTimeout(id);
+  }, []);
+
+  // ─── DATA ───
+  const concepts = [
+    { id: "ho", emoji: "🌊", name: "호캉스", area: "누사두아", desc: "리조트 밖은 위험해! 궁극의 휴양", rec: false },
+    { id: "sup", emoji: "🌿", name: "숲캉스", area: "우붓", desc: "정글 속 딥 힐링", rec: false },
+    { id: "hip", emoji: "🏄‍♀️", name: "힙캉스", area: "스미냑·짱구", desc: "트렌디한 발리의 중심", rec: false },
+    { id: "mix", emoji: "⚖️", name: "반반 믹스매치", area: "2박+2박 조합", desc: "절대 실패 없는 완벽한 하이브리드", rec: true },
+  ];
+
+  const hotelOptions = {
+    ho: [
+      { id: "ho1", name: "페어필드 1박 + 그랜드 미라지 3박", tags: "#가족여행 #커플여행 #부대시설맛집", perks: ["전 일정 조식 포함", "웰컴 과일(또는 케이크)", "초대형 인피니티 풀 & 프라이빗 비치"] },
+      { id: "ho2", name: "페어필드 1박 + 파라디수스 3박", tags: "#올인클루시브 #신상급컨디션", perks: ["전 일정 조식 포함", "올 인클루시브 (전 일정 식음료 무제한!)", "최근 리모델링 완료"] },
+    ],
+    sup: [
+      { id: "su1", name: "페어필드 1박 + 부미키나르 3박", tags: "#정글 #자연 #신상 🆕한국 최초 공개!", perks: ["전 일정 조식 포함", "런치 2인 1회 + 무료 미니바 셋업 1회", "프라이빗 풀 + 스카이라이트 빌라"] },
+      { id: "su2", name: "페어필드 1박 + 만다파 리츠칼튼 3박", tags: "#럭셔리 #리버뷰 #하이엔드", perks: ["전 일정 조식 포함", "허벌 스팀, 사우나, 바이탈리티 풀", "우붓 센트럴 무료 셔틀"] },
+    ],
+    hip: [
+      { id: "hi1", name: "페어필드 1박 + 홀리데이 인 짱구 3박", tags: "#짱구핫플 #선셋뷰 #인피니티풀", perks: ["전 일정 조식 포함", "루프탑 인피니티 풀 선셋 뷰", "짱구 해변 1열 직관"] },
+      { id: "hi2", name: "페어필드 1박 + 호텔 인디고 스미냑 3박", tags: "#힙플레이스 #디자인 #비치클럽", perks: ["전 일정 조식 포함", "식사(나시고랭+아이스티) 2인 1회", "스미냑 핫플 한가운데 위치"] },
+    ],
+    mix: [
+      { id: "mx1", label: "힙+숲", name: "홀리데이 인 짱구 2박 + 부미키나르 2박", perks: ["전 일정 조식 포함", "부미키나르 런치 2인 1회 + 미니바", "홀리데이 루프탑 인피니티 풀"] },
+      { id: "mx2", label: "힙+숲", name: "홀리데이 인 짱구 2박 + 만다파 리츠칼튼 2박", perks: ["전 일정 조식 포함", "허벌 스팀, 사우나, 바이탈리티 풀", "홀리데이 루프탑 인피니티 풀"] },
+      { id: "mx3", label: "힙+호", name: "홀리데이 인 짱구 2박 + 파라디수스 2박", perks: ["전 일정 조식 포함", "파라디수스 올 인클루시브", "홀리데이 루프탑 인피니티 풀"] },
+      { id: "mx4", label: "호+숲", name: "그랜드 미라지 2박 + 부미키나르 2박", perks: ["전 일정 조식 포함", "부미키나르 런치 2인 1회 + 미니바", "그랜드 미라지 초대형 인피니티 풀"] },
+      { id: "mx5", label: "호+숲", name: "그랜드 미라지 2박 + 만다파 리츠칼튼 2박", perks: ["전 일정 조식 포함", "허벌 스팀, 사우나, 바이탈리티 풀", "그랜드 미라지 초대형 인피니티 풀"] },
+      { id: "mx6", label: "호+힙", name: "그랜드 미라지 2박 + 인디고 스미냑 2박", perks: ["전 일정 조식 포함", "인디고 식사(나시고랭+아이스티) 2인", "그랜드 미라지 초대형 인피니티 풀"] },
+    ],
+  };
+
+  const dates = [
+    { id: "d1", label: "4/12(토) — 4/16(수)", seats: 4, hot: true },
+    { id: "d2", label: "4/19(토) — 4/23(수)", seats: 12, hot: false },
+    { id: "d3", label: "4/26(토) — 4/30(수)", seats: 8, hot: false },
+    { id: "d4", label: "5/3(토) — 5/7(수)", seats: 18, hot: false },
+  ];
+
+  const faqs = [
+    { q: "예약 확정은 언제 되나요?", a: "예약 접수 후 영업일 기준 5일 이내에 순차적으로 확정 처리됩니다. 객실 또는 항공 좌석이 마감되어 해당 일자에 진행이 불가할 경우, 개별 연락을 통해 가능한 대체 일자를 안내해 드립니다." },
+    { q: "침대 타입(트윈/더블)을 선택할 수 있나요?", a: "요청해 주시면 호텔 측에 사전 전달해 드리나, 당일 호텔 객실 상황에 따라 100% 개런티는 불가한 점 양해 부탁드립니다." },
+    { q: "체크아웃 후 프라이빗 차량 서비스는 어떻게 이용하나요?", a: "마지막 날 체크아웃 후 전용 차량과 기사가 12시간 동안 배정됩니다. 체크아웃 → 자유 관광/쇼핑/맛집 등 원하시는 일정 소화 → 공항 이동까지 한 번에 해결됩니다. 별도 교통비 걱정 없이 마지막 날까지 알차게 보내실 수 있습니다." },
+    { q: "숙소 간 이동(2박+2박 코스)은 어떻게 하나요?", a: "그랩/고젝 등 현지 차량 호출 앱으로 약 30분~1시간 이내에 이동 가능합니다. 보람's 가이드에서 앱 사용법과 최적 이동 동선을 상세히 안내해 드려요." },
+  ];
+
+  const visibleHotels = concept ? (hotelOptions[concept] || []) : [];
+  const progress = concept ? (hotel ? (date ? 3 : 2) : 1) : 0;
+
+  return (
+    <div style={{ fontFamily: font, background: T.bg, minHeight: "100vh", maxWidth: 480, margin: "0 auto", position: "relative" }}>
+
+      {/* ═══ Toast notification ═══ */}
+      {showToast && (
+        <div onClick={() => setShowToast(false)} style={{
+          position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)",
+          zIndex: 200, maxWidth: 420, width: "calc(100% - 32px)",
+          background: "#fff", borderRadius: 14, padding: "12px 16px",
+          boxShadow: "0 8px 30px rgba(0,0,0,0.12)", border: `1px solid ${T.border}`,
+          display: "flex", alignItems: "center", gap: 10, cursor: "pointer",
+          animation: "slideDown 0.4s ease-out",
+        }}>
+          <div style={{
+            width: 34, height: 34, borderRadius: 17, background: T.greenLight,
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0,
+          }}>✈️</div>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>서울 김** 님이 <span style={{ color: T.green }}>반반 믹스매치</span> 예약 완료!</div>
+            <div style={{ fontSize: 10, color: T.muted, marginTop: 1 }}>3분 전</div>
+          </div>
+          <div style={{ marginLeft: "auto", fontSize: 10, color: T.muted }}>✕</div>
+        </div>
+      )}
+
+      {/* ═══ Header ═══ */}
+      <div style={{
+        background: `linear-gradient(160deg, ${T.green} 0%, ${T.greenDark} 100%)`,
+        padding: "36px 24px 28px", color: "#fff", position: "relative", overflow: "hidden",
+      }}>
+        <div style={{
+          position: "absolute", top: -40, right: -40, width: 160, height: 160,
+          borderRadius: 80, background: "rgba(255,255,255,0.04)",
+        }} />
+        <div style={{
+          position: "absolute", bottom: -20, left: -20, width: 100, height: 100,
+          borderRadius: 50, background: "rgba(255,255,255,0.03)",
+        }} />
+        <div style={{ fontSize: 11, letterSpacing: 1.5, opacity: 0.6, marginBottom: 8, fontWeight: 500 }}>
+          BORAMCHAN TOUR × BALI
+        </div>
+        <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, lineHeight: 1.35 }}>
+          프리미엄 발리 에어텔
+        </h1>
+        <p style={{ fontSize: 13, opacity: 0.75, margin: "6px 0 0", lineHeight: 1.5 }}>
+          사전 이벤트 3/8(일) 18:00 ~ 24:00
+        </p>
+      </div>
+
+      {/* ═══ Progress bar ═══ */}
+      <div style={{ padding: "16px 20px 0" }}>
+        <div style={{ display: "flex", gap: 4 }}>
+          {["컨셉 선택", "숙소 선택", "일정 선택"].map((s, i) => (
+            <div key={i} style={{ flex: 1, textAlign: "center" }}>
+              <div style={{
+                height: 3, borderRadius: 2, marginBottom: 5,
+                background: i < progress ? T.green : i === progress ? `linear-gradient(90deg, ${T.green}, ${T.greenMid})` : T.borderLight,
+                transition: "background 0.3s",
+              }} />
+              <span style={{
+                fontSize: 10, fontWeight: i <= progress ? 700 : 400,
+                color: i <= progress ? T.green : T.muted,
+              }}>{s}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ padding: "20px 20px 140px" }}>
+
+        {/* ═══ QUIZ: 나에게 맞는 컨셉 찾기 ═══ */}
+        {quizStep < 5 && (
+          <div style={{
+            background: "#fff", borderRadius: 18, overflow: "hidden",
+            border: `1px solid ${T.border}`, marginBottom: 28,
+            boxShadow: "0 2px 16px rgba(0,0,0,0.04)",
+          }}>
+            {/* Quiz header */}
+            <div style={{
+              background: `linear-gradient(135deg, ${T.warmBg} 0%, #FFF7F0 100%)`,
+              padding: "20px 20px 16px",
+              borderBottom: `1px solid ${T.borderLight}`,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <span style={{
+                  fontSize: 10, fontWeight: 700, color: T.warm, letterSpacing: 1,
+                  background: "#fff", padding: "3px 10px", borderRadius: 20,
+                  border: `1px solid ${T.warm}30`,
+                }}>MINI TEST</span>
+              </div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: T.text, lineHeight: 1.4 }}>
+                🔍 나에게 찰떡인<br />발리 여행 컨셉 찾기!
+              </div>
+              {quizStep === 0 && (
+                <p style={{ fontSize: 12, color: T.sub, margin: "6px 0 0", lineHeight: 1.5 }}>
+                  3개 질문에 답하면 딱 맞는 컨셉을 추천해 드려요
+                </p>
+              )}
+            </div>
+
+            {/* Quiz progress dots */}
+            {quizStep >= 1 && quizStep <= 3 && (
+              <div style={{
+                display: "flex", justifyContent: "center", gap: 8,
+                padding: "14px 20px 0",
+              }}>
+                {[1, 2, 3].map(n => (
+                  <div key={n} style={{
+                    width: n <= quizStep ? 24 : 8, height: 8, borderRadius: 4,
+                    background: n < quizStep ? T.green : n === quizStep ? T.warm : T.borderLight,
+                    transition: "all 0.3s",
+                  }} />
+                ))}
+              </div>
+            )}
+
+            <div style={{ padding: "18px 20px 22px" }}>
+
+              {/* Intro */}
+              {quizStep === 0 && (
+                <div style={{ textAlign: "center" }}>
+                  <div style={{
+                    display: "flex", justifyContent: "center", gap: 12, marginBottom: 18, fontSize: 32,
+                  }}>
+                    <span>🌊</span><span>🌿</span><span>🏄‍♀️</span><span>⚖️</span>
+                  </div>
+                  <button onClick={() => setQuizStep(1)} style={{
+                    width: "100%", padding: "15px 0", border: "none", borderRadius: 12,
+                    background: T.warm, color: "#fff", fontSize: 15, fontWeight: 700,
+                    cursor: "pointer", fontFamily: font,
+                    boxShadow: `0 4px 14px ${T.warm}40`,
+                  }}>
+                    테스트 시작하기 →
+                  </button>
+                  <button onClick={() => setQuizStep(5)} style={{
+                    marginTop: 8, background: "none", border: "none",
+                    fontSize: 11, color: T.muted, cursor: "pointer", fontFamily: font,
+                    padding: "6px 0",
+                  }}>
+                    건너뛰고 직접 선택할게요
+                  </button>
+                </div>
+              )}
+
+              {/* Questions 1~3 */}
+              {quizStep >= 1 && quizStep <= 3 && (() => {
+                const qData = quizQuestions[quizStep - 1];
+                return (
+                  <div>
+                    <div style={{
+                      fontSize: 10, fontWeight: 700, color: T.warm, marginBottom: 8,
+                    }}>Q{quizStep}/3</div>
+                    <div style={{
+                      fontSize: 15, fontWeight: 700, color: T.text, lineHeight: 1.5,
+                      marginBottom: 16,
+                    }}>{qData.q}</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {qData.options.map((opt, i) => (
+                        <button key={i} onClick={() => handleQuizAnswer(opt)} style={{
+                          display: "flex", alignItems: "flex-start", gap: 12,
+                          padding: "14px 14px", borderRadius: 12, width: "100%",
+                          border: `1.5px solid ${T.border}`, background: "#fff",
+                          cursor: "pointer", textAlign: "left", fontFamily: font,
+                          transition: "all 0.15s",
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = T.warm; e.currentTarget.style.background = T.warmLight; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.background = "#fff"; }}
+                        >
+                          <span style={{ fontSize: 22, lineHeight: 1, flexShrink: 0, marginTop: 1 }}>{opt.emoji}</span>
+                          <span style={{ fontSize: 13, color: T.text, lineHeight: 1.5, fontWeight: 500 }}>{opt.text}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Result */}
+              {quizStep === 4 && quizResult && (() => {
+                const r = resultMap[quizResult];
+                return (
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 48, marginBottom: 12 }}>{r.emoji}</div>
+                    <div style={{
+                      fontSize: 11, fontWeight: 700, color: T.warm,
+                      letterSpacing: 1, marginBottom: 6,
+                    }}>당신의 취향은</div>
+                    <div style={{
+                      fontSize: 22, fontWeight: 800, color: T.text, marginBottom: 4,
+                    }}>{r.name}</div>
+                    <Badge bg={T.greenLight} color={T.green}>{r.area} 지역</Badge>
+                    <p style={{
+                      fontSize: 13, color: T.sub, lineHeight: 1.65, margin: "14px 0 20px",
+                      textAlign: "left",
+                    }}>
+                      {r.desc}
+                    </p>
+                    <button onClick={applyQuizResult} style={{
+                      width: "100%", padding: "15px 0", border: "none", borderRadius: 12,
+                      background: `linear-gradient(135deg, ${T.green}, ${T.greenDark})`,
+                      color: "#fff", fontSize: 15, fontWeight: 700,
+                      cursor: "pointer", fontFamily: font,
+                      boxShadow: `0 4px 14px rgba(26,107,74,0.3)`,
+                    }}>
+                      이 컨셉으로 숙소 보기 →
+                    </button>
+                    <button onClick={resetQuiz} style={{
+                      marginTop: 8, background: "none", border: "none",
+                      fontSize: 11, color: T.muted, cursor: "pointer", fontFamily: font,
+                      padding: "6px 0",
+                    }}>
+                      다시 테스트하기
+                    </button>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ SEC 1: Concept ═══ */}
+        <div ref={step1Ref}>
+        <SectionTitle step="STEP 1" title="나의 여행 컨셉은?" sub="하나를 선택하면 맞춤 숙소와 가격이 표시돼요" />
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {concepts.map(c => {
+            const sel = concept === c.id;
+            return (
+              <button key={c.id} onClick={() => { setConcept(c.id); setHotel(null); }} style={{
+                position: "relative", display: "flex", alignItems: "center", gap: 14,
+                padding: "15px 16px", borderRadius: 14, cursor: "pointer", width: "100%", textAlign: "left",
+                border: sel ? `2px solid ${T.green}` : c.rec ? `2px solid ${T.warm}` : `1.5px solid ${T.border}`,
+                background: sel ? T.greenLight : c.rec ? T.warmLight : "#fff",
+                transition: "all 0.2s",
+                boxShadow: sel ? `0 2px 12px rgba(26,107,74,0.1)` : "none",
+              }}>
+                {c.rec && !sel && (
+                  <span style={{
+                    position: "absolute", top: -10, right: 14,
+                    background: T.warm, color: "#fff", fontSize: 9, fontWeight: 700,
+                    padding: "3px 10px", borderRadius: 10,
+                  }}>⭐ 보람's 강력추천</span>
+                )}
+                <span style={{ fontSize: 28, lineHeight: 1 }}>{c.emoji}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>
+                    {c.name}
+                    <span style={{ fontSize: 11, fontWeight: 400, color: T.muted, marginLeft: 6 }}>{c.area}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{c.desc}</div>
+                </div>
+                <div style={{
+                  width: 20, height: 20, borderRadius: 10, flexShrink: 0,
+                  border: sel ? `6px solid ${T.green}` : `2px solid ${T.border}`,
+                  transition: "border 0.2s",
+                }} />
+              </button>
+            );
+          })}
+        </div>
+        </div> {/* end step1Ref */}
+
+        {/* ═══ SEC 2: Hotels ═══ */}
+        {concept && (
+          <>
+            <Divider />
+            <SectionTitle step="STEP 2" title="숙소를 선택하세요"
+              sub={concept === "mix"
+                ? "서로 다른 지역의 매력을 2박씩 쏙쏙! 모든 옵션에 페어필드 0.5박 기본 포함"
+                : "모든 옵션에 페어필드 사우스 꾸따 0.5박(공항 10분) 기본 포함"
+              }
+            />
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {visibleHotels.map(h => {
+                const sel = hotel === h.id;
+                return (
+                  <button key={h.id} onClick={() => setHotel(h.id)} style={{
+                    padding: "18px 16px", borderRadius: 14, textAlign: "left",
+                    width: "100%", cursor: "pointer",
+                    border: sel ? `2px solid ${T.green}` : `1.5px solid ${T.border}`,
+                    background: sel ? T.greenLight : "#fff",
+                    transition: "all 0.2s",
+                    boxShadow: sel ? `0 2px 12px rgba(26,107,74,0.08)` : "none",
+                  }}>
+                    {h.label && (
+                      <Badge bg={T.goldLight} color={T.gold}>{h.label}</Badge>
+                    )}
+                    {h.tags && (
+                      <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>{h.tags}</div>
+                    )}
+                    <div style={{
+                      fontSize: 14, fontWeight: 700, color: T.text,
+                      margin: h.label || h.tags ? "6px 0 0" : 0, lineHeight: 1.4,
+                    }}>{h.name}</div>
+
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5, margin: "10px 0" }}>
+                      {h.perks.map((p, j) => (
+                        <span key={j} style={{
+                          fontSize: 10, color: T.green, background: sel ? "#fff" : T.greenLight,
+                          border: `1px solid ${T.green}22`, padding: "3px 8px", borderRadius: 6,
+                        }}>✓ {p}</span>
+                      ))}
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: T.text }}>
+                        ────── <span style={{ fontSize: 12, fontWeight: 500 }}>원~</span>
+                      </div>
+                      <div style={{
+                        width: 20, height: 20, borderRadius: 10,
+                        border: sel ? `6px solid ${T.green}` : `2px solid ${T.border}`,
+                        transition: "border 0.2s",
+                      }} />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* ═══ SEC 3: Dates ═══ */}
+        {hotel && (
+          <>
+            <Divider />
+            <SectionTitle step="STEP 3" title="출발일을 선택하세요" sub="4월~6월 출발 가능 · 날짜별 가격이 달라요" />
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {dates.map(d => {
+                const sel = date === d.id;
+                return (
+                  <button key={d.id} onClick={() => setDate(d.id)} style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "14px 16px", borderRadius: 12, width: "100%", cursor: "pointer",
+                    border: sel ? `2px solid ${T.green}` : d.hot ? `1.5px solid ${T.red}` : `1.5px solid ${T.border}`,
+                    background: sel ? T.greenLight : d.hot ? T.redLight : "#fff",
+                    transition: "all 0.2s",
+                  }}>
+                    <div style={{ textAlign: "left" }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{d.label}</div>
+                      <div style={{
+                        fontSize: 11, marginTop: 3,
+                        color: d.hot ? T.red : T.muted,
+                        fontWeight: d.hot ? 700 : 400,
+                      }}>
+                        {d.hot ? "⚡ 마감임박 " : ""}잔여 {d.seats}석
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>────── 원</div>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* ═══ Benefits ═══ */}
+        <Divider />
+        <div style={{
+          background: T.greenLight, borderRadius: 14, padding: "18px 18px 14px", marginBottom: 14,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: T.green, marginBottom: 3 }}>💰 내가 무료로 받는 혜택 총합</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: T.greenDark }}>약 240,000<span style={{ fontSize: 14, fontWeight: 600 }}>원 상당</span></div>
+        </div>
+
+        {[
+          { icon: "🍳", name: "전 일정 호텔 조식 4회", val: "약 180,000원" },
+          { icon: "🚐", name: "체크아웃 후 12시간 프라이빗 차량 서비스", val: "약 40,000원" },
+          { icon: "🛡️", name: "1억 원 프리미엄 여행자보험", val: "약 20,000원" },
+          { icon: "📍", name: "보람's 발리 찐핫플 구글맵", val: "비매품" },
+          { icon: "📝", name: "컨셉별 완벽 일정표", val: "비매품" },
+        ].map((b, i) => (
+          <div key={i} style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "11px 14px", background: "#fff", borderRadius: 10, marginBottom: 5,
+            border: `1px solid ${T.borderLight}`,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 17 }}>{b.icon}</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{b.name}</span>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 700, color: T.green, flexShrink: 0 }}>{b.val}</span>
+          </div>
+        ))}
+
+        {/* ═══ Social Proof ═══ */}
+        <Divider />
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "10px 14px", background: T.redLight, borderRadius: 10, marginBottom: 14,
+        }}>
+          <span style={{
+            width: 8, height: 8, borderRadius: 4, background: T.red,
+            boxShadow: `0 0 0 3px ${T.redLight}`,
+            animation: "pulse 1.5s infinite",
+          }} />
+          <span style={{ fontSize: 12, fontWeight: 600, color: T.red }}>지금 47명이 이 상품을 보고 있어요</span>
+        </div>
+
+        <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 10 }}>💬 실제 이용 후기</div>
+        {[
+          { name: "여행조아 ★★★★★", text: "보람 언니 구글맵 진짜 사기.. 현지 맛집 하나도 안 빠짐. 우붓+짱구 조합이 미쳤어요!", date: "2025.02 출발" },
+          { name: "발리홀릭 ★★★★★", text: "부미키나르 정글 뷰에서 눈 떴을 때 소름.. 이 가격에 이 숙소는 진심 가성비 끝판왕", date: "2025.01 출발" },
+          { name: "신혼여행가즈아 ★★★★★", text: "일정표 따라 갔더니 진짜 하루도 허투루 안 보냄. 남편이 다음에도 보람투어 가재요 ㅋㅋ", date: "2025.03 출발" },
+        ].map((r, i) => (
+          <div key={i} style={{
+            padding: "14px 16px", background: "#fff", borderRadius: 12, marginBottom: 8,
+            border: `1px solid ${T.borderLight}`,
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: T.text, marginBottom: 4 }}>{r.name}</div>
+            <div style={{ fontSize: 12, color: T.sub, lineHeight: 1.55 }}>"{r.text}"</div>
+            <div style={{ fontSize: 10, color: T.muted, marginTop: 5 }}>{r.date}</div>
+          </div>
+        ))}
+
+        {/* ═══ Price breakdown ═══ */}
+        <Divider />
+        <SectionTitle title="📋 가격 구성 상세" />
+        <div style={{
+          background: "#fff", borderRadius: 14, padding: "18px 16px",
+          border: `1px solid ${T.borderLight}`,
+        }}>
+          {[
+            { label: "왕복 항공권 + 숙박 4박 (TAX·유류 포함)", val: "────── 원", free: false },
+            { label: "전 일정 호텔 조식 4회", val: "✓ 포함", free: true },
+            { label: "체크아웃 후 12시간 프라이빗 차량 서비스", val: "✓ 포함", free: true },
+            { label: "1억 원 프리미엄 여행자보험", val: "✓ 포함", free: true },
+          ].map((r, i) => (
+            <div key={i} style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              padding: "10px 0", borderBottom: i < 3 ? `1px solid ${T.borderLight}` : "none",
+              fontSize: 12.5,
+            }}>
+              <span style={{ color: T.sub, flex: 1, marginRight: 12 }}>{r.label}</span>
+              <span style={{ fontWeight: 600, color: r.free ? T.green : T.text, flexShrink: 0 }}>{r.val}</span>
+            </div>
+          ))}
+          <div style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: "14px 0 0", marginTop: 6,
+            borderTop: `2px solid ${T.text}`, fontSize: 15, fontWeight: 800,
+          }}>
+            <span style={{ color: T.text }}>선착순 할인 적용가</span>
+            <span style={{ color: T.green }}>────── 원</span>
+          </div>
+        </div>
+
+        {/* ═══ Info section ═══ */}
+        <Divider />
+        <SectionTitle title="🛫 예약 전 필수 확인 사항" />
+
+        {/* Collapsible info panels */}
+        {[
+          {
+            title: "항공 안내 (에어텔 기준)",
+            content: (
+              <div style={{ fontSize: 12, color: T.sub, lineHeight: 1.7 }}>
+                • 본 상품은 <b>왕복 항공권이 포함된 에어텔(항공+숙박)</b> 상품입니다.<br />
+                • 출발일 및 선택 옵션에 따라 이용 항공사(대한항공, 제주항공, 에어부산 등) 및 비행 스케줄이 다르게 배정됩니다.<br />
+                • <b>출발 공항</b>: 인천 출발(매일), 부산 출발(주 2회) 중 선택 가능<br />
+                • 정확한 항공 스케줄은 예약 접수 후 해피콜 또는 확정 문자를 통해 안내해 드리며, <b>출발일 2~3주 전 이티켓(E-ticket)</b>이 송부됩니다.
+              </div>
+            ),
+          },
+          {
+            title: "📋 포함 / 불포함 사항",
+            content: (
+              <div style={{ fontSize: 12, color: T.sub, lineHeight: 1.7 }}>
+                <div style={{ fontWeight: 700, color: T.green, marginBottom: 4 }}>🟢 포함 사항</div>
+                • 왕복 항공권 (TAX + 유류할증료 포함)<br />
+                • 호텔 숙박 4박 (선택 코스에 따름)<br />
+                • 호텔 조식 4박 (전 일정 조식 포함)<br />
+                • 체크아웃 후 12시간 프라이빗 차량 서비스 (전용 차량+기사 배정)<br />
+                • 1억 원 상당 프리미엄 해외여행자 보험<br /><br />
+                <div style={{ fontWeight: 700, color: T.red, marginBottom: 4 }}>🔴 불포함 사항</div>
+                • 개인경비 및 매너 팁 (호텔 벨보이, 마사지 등)<br />
+                • 숙소 간 이동 교통비 (2박+2박 코스 중간 이동은 그랩/고젝 등 개별 이동)<br />
+                • 발리 도착비자 ($35/인) 및 관광세 ($10/인)<br />
+                • ※ 유류비 및 택스 급변 시 추가금이 발생할 수 있습니다.
+              </div>
+            ),
+          },
+          {
+            title: "👨‍👩‍👧 인원 구성 및 아동 요금",
+            content: (
+              <div style={{ fontSize: 12, color: T.sub, lineHeight: 1.7 }}>
+                • <b>기본 인원</b>: 본 상품은 '성인 2명 이상' 기준 구매 가능 (인원 수별 각각 구매)<br />
+                • <b>아동 요금</b>: 만 24개월 초과 → 성인과 동일 (베드 포함 / 조식 포함)<br />
+                • <b>유아 요금</b>: 만 24개월 미만 → 1인 20만 원 (베드 미제공 / 항공 좌석 미배정)
+              </div>
+            ),
+          },
+          {
+            title: "⚠️ 예약 변경 및 취소 규정",
+            content: (
+              <div style={{ fontSize: 12, color: T.sub, lineHeight: 1.7 }}>
+                <div style={{
+                  background: T.warmBg, borderRadius: 8, padding: "10px 12px",
+                  marginBottom: 10, fontSize: 11, color: T.text, lineHeight: 1.6,
+                  borderLeft: `3px solid ${T.warm}`,
+                }}>
+                  본 기획전은 성수기 발리의 최고급 리조트들을 가장 저렴하게 확보하기 위해 <b>'특별 조건'</b>으로 계약되었습니다. 파격적인 가격과 혜택을 드리는 대신 취소 규정이 엄격한 편이니, 일정을 꼭 확인하신 후 신중한 결제 부탁드립니다. <b>대신 가시는 날까지 완벽하게 책임지겠습니다.</b>
+                </div>
+                • 구매 후 <b>단순 변심 또는 개인 과실로 인한 취소는 불가</b>합니다.<br />
+                • 출발일 기준 <b>45일 전</b>까지 취소 시: 항공권 요금의 50%만 환불 (숙박 및 수수료 공제)<br />
+                • 출발일 기준 <b>45일 미만</b> 취소 시: 전액 환불 불가 (100% 위약금)<br />
+                • ※ 최소 출발 인원 2인 기준, 단순 변심 취소 불가
+              </div>
+            ),
+          },
+          {
+            title: "🛂 입국 필수 정보",
+            content: (
+              <div style={{ fontSize: 12, color: T.sub, lineHeight: 1.7 }}>
+                • <b>여권 유효기간</b>: 출국일 기준 정확히 6개월 이상 남아있어야 함 (단 하루라도 부족하면 입국 절대 불가)<br /><br />
+                • <b>발리 입국 필수 서류 3가지</b>:<br />
+                &nbsp;&nbsp;① 전자 세관 신고서 (e-CD)<br />
+                &nbsp;&nbsp;② 인도네시아 도착비자 (e-VOA)<br />
+                &nbsp;&nbsp;③ 발리 주정부 관광세<br /><br />
+                ※ 출국 전 온라인으로 미리 결제 및 발급을 <b>강력히 권장</b>합니다. 발급 가이드는 확정 후 별도 안내.
+              </div>
+            ),
+          },
+        ].map((panel, i) => {
+          const open = expandedFaq === `info-${i}`;
+          return (
+            <div key={i} style={{
+              background: "#fff", borderRadius: 12, marginBottom: 6,
+              border: `1px solid ${T.borderLight}`, overflow: "hidden",
+            }}>
+              <button onClick={() => setExpandedFaq(open ? null : `info-${i}`)} style={{
+                width: "100%", padding: "14px 16px", textAlign: "left",
+                border: "none", background: "none", cursor: "pointer",
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                fontFamily: font,
+              }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{panel.title}</span>
+                <span style={{
+                  fontSize: 12, color: T.muted, transform: open ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: "transform 0.2s",
+                }}>▼</span>
+              </button>
+              {open && <div style={{ padding: "0 16px 16px" }}>{panel.content}</div>}
+            </div>
+          );
+        })}
+
+        {/* ═══ FAQ ═══ */}
+        <Divider />
+        <SectionTitle title="❓ 자주 묻는 질문 (FAQ)" />
+
+        {faqs.map((f, i) => {
+          const open = expandedFaq === `faq-${i}`;
+          return (
+            <div key={i} style={{
+              background: "#fff", borderRadius: 12, marginBottom: 6,
+              border: `1px solid ${T.borderLight}`, overflow: "hidden",
+            }}>
+              <button onClick={() => setExpandedFaq(open ? null : `faq-${i}`)} style={{
+                width: "100%", padding: "14px 16px", textAlign: "left",
+                border: "none", background: "none", cursor: "pointer",
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                fontFamily: font,
+              }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Q. {f.q}</span>
+                <span style={{
+                  fontSize: 12, color: T.muted, transform: open ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: "transform 0.2s", flexShrink: 0, marginLeft: 8,
+                }}>▼</span>
+              </button>
+              {open && (
+                <div style={{ padding: "0 16px 16px", fontSize: 12.5, color: T.sub, lineHeight: 1.6 }}>
+                  {f.a}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* ═══ Booking process ═══ */}
+        <div style={{
+          background: "#fff", borderRadius: 14, padding: "18px 16px", marginTop: 12,
+          border: `1px solid ${T.borderLight}`,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 12 }}>📱 예약 진행 절차</div>
+          {[
+            { n: "1", t: "옵션 선택 & 결제", d: "원하시는 코스와 일정을 선택 후 인원수에 맞게 결제" },
+            { n: "2", t: "여행자 정보 입력", d: "결제 후 문자 안내에 따라 탑승객 전원의 정확한 여권 정보 입력" },
+            { n: "3", t: "예약 확정 안내", d: "5 영업일 이내 항공 및 숙소 수배 후 확정 안내" },
+            { n: "4", t: "이티켓 & 바우처 발송", d: "출발 2~3주 전 카카오톡/문자로 송부" },
+          ].map((s, i) => (
+            <div key={i} style={{
+              display: "flex", gap: 12, marginBottom: i < 3 ? 12 : 0,
+              paddingBottom: i < 3 ? 12 : 0,
+              borderBottom: i < 3 ? `1px solid ${T.borderLight}` : "none",
+            }}>
+              <div style={{
+                width: 24, height: 24, borderRadius: 12, flexShrink: 0,
+                background: T.green, color: "#fff", fontSize: 11, fontWeight: 700,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>{s.n}</div>
+              <div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text }}>{s.t}</div>
+                <div style={{ fontSize: 11.5, color: T.sub, marginTop: 2, lineHeight: 1.5 }}>{s.d}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ═══ Countdown + CTA ═══ */}
+        <Divider />
+        <div style={{ textAlign: "center" }}>
+          <div style={{
+            background: T.redLight, borderRadius: 14, padding: "16px 18px", marginBottom: 18,
+          }}>
+            <div style={{ fontSize: 11, color: T.red, fontWeight: 600, marginBottom: 8 }}>⏰ 사전 이벤트 종료까지</div>
+            <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
+              {[
+                { v: String(countdown.d).padStart(2, "0"), u: "일" },
+                { v: String(countdown.h).padStart(2, "0"), u: "시간" },
+                { v: String(countdown.m).padStart(2, "0"), u: "분" },
+                { v: String(countdown.s).padStart(2, "0"), u: "초" },
+              ].map((t, i) => (
+                <div key={i} style={{ textAlign: "center" }}>
+                  <div style={{
+                    background: T.red, color: "#fff", fontSize: 22, fontWeight: 800,
+                    padding: "8px 12px", borderRadius: 10, minWidth: 46,
+                    fontVariantNumeric: "tabular-nums",
+                  }}>{t.v}</div>
+                  <div style={{ fontSize: 9, color: T.muted, marginTop: 4 }}>{t.u}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ fontSize: 14, color: T.red, fontWeight: 700, marginBottom: 5 }}>
+            이 가격은 3/8(일) 자정 이후 만날 수 없습니다
+          </div>
+          <div style={{ fontSize: 12, color: T.sub, marginBottom: 20, lineHeight: 1.5 }}>
+            사전 이벤트 기간: <b>3월 8일(일) 18:00 ~ 24:00 (단 6시간)</b><br />
+            종료 후 동일 상품 가격: <b>약 +150,000원 이상 인상</b>
+          </div>
+
+          <button style={{
+            width: "100%", padding: "18px 0", border: "none", borderRadius: 14,
+            background: `linear-gradient(135deg, ${T.green}, ${T.greenDark})`,
+            color: "#fff", fontSize: 17, fontWeight: 800, cursor: "pointer",
+            boxShadow: `0 6px 24px rgba(26,107,74,0.3)`,
+            fontFamily: font,
+          }}>
+            지금 바로 예약하기 →
+          </button>
+          <div style={{ fontSize: 10, color: T.muted, marginTop: 10 }}>🔒 SSL 암호화 결제 · 개인정보 보호</div>
+        </div>
+      </div>
+
+      {/* ═══ Sticky CTA bar ═══ */}
+      <div style={{
+        position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
+        width: "100%", maxWidth: 480,
+        background: "rgba(255,255,255,0.97)", backdropFilter: "blur(12px)",
+        borderTop: `1px solid ${T.border}`,
+        padding: "10px 18px", display: "flex", alignItems: "center", justifyContent: "space-between",
+        zIndex: 100,
+      }}>
+        <div>
+          <div style={{ fontSize: 10, color: T.muted }}>선택 상품 합계</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: T.text }}>
+            ────── <span style={{ fontSize: 12, fontWeight: 500 }}>원</span>
+            <span style={{ fontSize: 10, color: T.red, fontWeight: 600, marginLeft: 6 }}>잔여 N석</span>
+          </div>
+        </div>
+        <button style={{
+          background: T.green, color: "#fff", border: "none", borderRadius: 12,
+          padding: "14px 26px", fontSize: 14, fontWeight: 700, cursor: "pointer",
+          boxShadow: `0 4px 14px rgba(26,107,74,0.25)`, fontFamily: font,
+        }}>
+          바로 예약하기
+        </button>
+      </div>
+
+      {/* ═══ Keyframes ═══ */}
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+        @keyframes slideDown {
+          from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+          to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+}
     ReactDOM.render(<App />, document.getElementById('root'));
   </script>
 </body>
