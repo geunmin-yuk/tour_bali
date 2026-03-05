@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <!-- 번역기(Babel)를 구버전에서 최신 버전으로 교체했습니다! -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
     body { margin: 0; padding: 0; }
@@ -28,7 +27,7 @@ const T = {
 const font = `'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
 
 function useCountdown(targetDate) {
-  const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 });
+  const[timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 });
   useEffect(() => {
     const tick = () => {
       const now = new Date();
@@ -72,14 +71,42 @@ const Divider = () => (
 function PurchaseLanding() {
   const [concept, setConcept] = useState(null);
   const [hotel, setHotel] = useState(null);
-  const [date, setDate] = useState(null);
+  const [month, setMonth] = useState(null); // date -> month로 변경
   const [expandedFaq, setExpandedFaq] = useState(null);
-  const [showToast, setShowToast] = useState(false);
+  const[showToast, setShowToast] = useState(false);
+  const [viewers, setViewers] = useState(64); // 실시간 방문자 수
 
   const [quizStep, setQuizStep] = useState(0); 
   const [quizAnswers, setQuizAnswers] = useState([]);
   const[quizResult, setQuizResult] = useState(null);
   const step1Ref = useRef(null);
+
+  // 실시간 방문자 모방 알고리즘 (현실적인 수학적 모델)
+  useEffect(() => {
+    const updateViewers = () => {
+      const now = new Date();
+      const h = now.getHours();
+      let base = 50;
+      
+      // 1. 시간대별 기본값 (저녁 오픈 시간에 가장 높음)
+      if (h >= 18 && h <= 23) base = 130 + (h - 18) * 15; // 130 ~ 205
+      else if (h >= 9 && h <= 17) base = 70 + (h - 9) * 5; // 70 ~ 110
+      else if (h >= 0 && h <= 2) base = 60; // 심야
+      else base = 25; // 새벽
+      
+      // 2. 분(Minute)에 따른 자연스러운 파동 (사인 곡선 이용, 60분 주기)
+      const wave = Math.sin((now.getMinutes() / 60) * Math.PI) * 20;
+      
+      // 3. 약간의 랜덤 노이즈 (-5 ~ +5)
+      const noise = Math.floor(Math.random() * 11) - 5;
+      
+      setViewers(Math.floor(base + wave + noise));
+    };
+
+    updateViewers();
+    const intervalId = setInterval(updateViewers, 3000); // 3초마다 업데이트
+    return () => clearInterval(intervalId);
+  }, []);
 
   const quizQuestions =[
     {
@@ -136,7 +163,6 @@ function PurchaseLanding() {
     setHotel(null);
     setQuizStep(5); 
     setTimeout(() => {
-      // 에러가 나던 부분을 안전하게 수정했습니다!
       if (step1Ref.current) {
         step1Ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
       }
@@ -194,11 +220,22 @@ function PurchaseLanding() {
     ],
   };
 
-  const dates =[
-    { id: "d1", label: "4/12(토) — 4/16(수)", seats: 4, hot: true },
-    { id: "d2", label: "4/19(토) — 4/23(수)", seats: 12, hot: false },
-    { id: "d3", label: "4/26(토) — 4/30(수)", seats: 8, hot: false },
-    { id: "d4", label: "5/3(토) — 5/7(수)", seats: 18, hot: false },
+  const months =[
+    { id: "m4", label: "4월 출발", seats: 12, hot: false },
+    { id: "m5", label: "5월 출발 (가정의 달)", seats: 5, hot: true },
+    { id: "m6", label: "6월 출발", seats: 18, hot: false },
+    { id: "m7", label: "7월 출발 (여름 휴가)", seats: 4, hot: true },
+    { id: "m8", label: "8월 출발 (여름 휴가)", seats: 6, hot: true },
+    { id: "m9", label: "9월 출발 (추석 연휴 포함)", seats: 9, hot: false },
+    { id: "m10", label: "10월 출발 (징검다리 연휴)", seats: 24, hot: false },
+  ];
+
+  const priceDetails =[
+    { label: "왕복 항공권 + 숙박 4박 (TAX·유류 포함)", val: "────── 원", free: false },
+    { label: "전 일정 호텔 조식 4회", val: "✓ 포함", free: true },
+    { label: "체크아웃 후 12시간 프라이빗 차량 서비스", val: "✓ 포함", free: true },
+    { label: "1억 원 프리미엄 여행자보험", val: "✓ 포함", free: true },
+    { label: "현지 eSIM 1GB 5일권 (2인)", val: "✓ 포함", free: true },
   ];
 
   const faqs =[
@@ -209,7 +246,7 @@ function PurchaseLanding() {
   ];
 
   const visibleHotels = concept ? (hotelOptions[concept] || []) :[];
-  const progress = concept ? (hotel ? (date ? 3 : 2) : 1) : 0;
+  const progress = concept ? (hotel ? (month ? 3 : 2) : 1) : 0;
 
   return (
     <div style={{ fontFamily: font, background: T.bg, minHeight: "100vh", maxWidth: 480, margin: "0 auto", position: "relative" }}>
@@ -514,26 +551,26 @@ function PurchaseLanding() {
         {hotel && (
           <>
             <Divider />
-            <SectionTitle step="STEP 3" title="출발일을 선택하세요" sub="4월~6월 출발 가능 · 날짜별 가격이 달라요" />
+            <SectionTitle step="STEP 3" title="출발월을 선택하세요" sub="4월~10월 출발 가능 · 월별 가격이 달라요" />
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {dates.map(d => {
-                const sel = date === d.id;
+              {months.map(m => {
+                const sel = month === m.id;
                 return (
-                  <button key={d.id} onClick={() => setDate(d.id)} style={{
+                  <button key={m.id} onClick={() => setMonth(m.id)} style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
                     padding: "14px 16px", borderRadius: 12, width: "100%", cursor: "pointer",
-                    border: sel ? `2px solid ${T.green}` : d.hot ? `1.5px solid ${T.red}` : `1.5px solid ${T.border}`,
-                    background: sel ? T.greenLight : d.hot ? T.redLight : "#fff",
+                    border: sel ? `2px solid ${T.green}` : m.hot ? `1.5px solid ${T.red}` : `1.5px solid ${T.border}`,
+                    background: sel ? T.greenLight : m.hot ? T.redLight : "#fff",
                     transition: "all 0.2s",
                   }}>
                     <div style={{ textAlign: "left" }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{d.label}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{m.label}</div>
                       <div style={{
                         fontSize: 11, marginTop: 3,
-                        color: d.hot ? T.red : T.muted,
-                        fontWeight: d.hot ? 700 : 400,
+                        color: m.hot ? T.red : T.muted,
+                        fontWeight: m.hot ? 700 : 400,
                       }}>
-                        {d.hot ? "⚡ 마감임박 " : ""}잔여 {d.seats}석
+                        {m.hot ? "⚡ 마감임박 " : ""}잔여 {m.seats}석
                       </div>
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>────── 원</div>
@@ -582,22 +619,27 @@ function PurchaseLanding() {
             boxShadow: `0 0 0 3px ${T.redLight}`,
             animation: "pulse 1.5s infinite",
           }} />
-          <span style={{ fontSize: 12, fontWeight: 600, color: T.red }}>지금 47명이 이 상품을 보고 있어요</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: T.red, transition: "all 0.3s" }}>
+            지금 {viewers}명이 이 상품을 보고 있어요
+          </span>
         </div>
 
-        <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 10 }}>💬 실제 이용 후기</div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: T.text, marginBottom: 10 }}>💬 기획자 리얼 답사 후기</div>
         {[
-          { name: "여행조아 ★★★★★", text: "보람 언니 구글맵 진짜 사기.. 현지 맛집 하나도 안 빠짐. 우붓+짱구 조합이 미쳤어요!", date: "2025.02 출발" },
-          { name: "발리홀릭 ★★★★★", text: "부미키나르 정글 뷰에서 눈 떴을 때 소름.. 이 가격에 이 숙소는 진심 가성비 끝판왕", date: "2025.01 출발" },
-          { name: "신혼여행가즈아 ★★★★★", text: "일정표 따라 갔더니 진짜 하루도 허투루 안 보냄. 남편이 다음에도 보람투어 가재요 ㅋㅋ", date: "2025.03 출발" },
+          { name: "김지연 기획자 (MD)", text: "우붓+짱구 조합은 제가 직접 다녀오고 확신해서 넣었습니다. 부미키나르의 정글 뷰는 사진에 안 담겨요. 아침에 새소리 들으며 일어나는 경험, 그리고 짱구 홀리데이 인에서의 선셋은 완벽한 밸런스입니다.", date: "2025.10 발리 현지 답사" },
+          { name: "이현우 기획자 (호텔 소싱 담당)", text: "호캉스의 끝판왕을 찾기 위해 누사두아 5성급 리조트 10곳 이상을 직접 돌며 비교했습니다. 파라디수스의 올인클루시브는 지갑 걱정 없이 칵테일과 식사를 무제한으로 즐길 수 있어 강력 추천합니다.", date: "2025.11 발리 현지 답사" },
+          { name: "박소민 기획자 (CX팀)", text: "고객님들의 이동 동선을 1분 단위로 시뮬레이션 했어요. 특히 체크아웃 후 12시간 프라이빗 차량 서비스는 마지막 날 캐리어 끌고 다니는 고생을 없애기 위해 저희가 억지로 우겨서 넣은 핵심 혜택입니다!", date: "2025.11 발리 현지 답사" },
         ].map((r, i) => (
           <div key={i} style={{
-            padding: "14px 16px", background: "#fff", borderRadius: 12, marginBottom: 8,
+            padding: "16px 16px", background: "#fff", borderRadius: 12, marginBottom: 8,
             border: `1px solid ${T.borderLight}`,
           }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: T.text, marginBottom: 4 }}>{r.name}</div>
-            <div style={{ fontSize: 12, color: T.sub, lineHeight: 1.55 }}>"{r.text}"</div>
-            <div style={{ fontSize: 10, color: T.muted, marginTop: 5 }}>{r.date}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+              <div style={{ width: 22, height: 22, borderRadius: 11, background: T.warmLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>💼</div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: T.text }}>{r.name}</div>
+            </div>
+            <div style={{ fontSize: 12.5, color: T.sub, lineHeight: 1.6 }}>"{r.text}"</div>
+            <div style={{ fontSize: 10, color: T.muted, marginTop: 8 }}>{r.date}</div>
           </div>
         ))}
 
@@ -607,15 +649,10 @@ function PurchaseLanding() {
           background: "#fff", borderRadius: 14, padding: "18px 16px",
           border: `1px solid ${T.borderLight}`,
         }}>
-          {[
-            { label: "왕복 항공권 + 숙박 4박 (TAX·유류 포함)", val: "────── 원", free: false },
-            { label: "전 일정 호텔 조식 4회", val: "✓ 포함", free: true },
-            { label: "체크아웃 후 12시간 프라이빗 차량 서비스", val: "✓ 포함", free: true },
-            { label: "1억 원 프리미엄 여행자보험", val: "✓ 포함", free: true },
-          ].map((r, i) => (
+          {priceDetails.map((r, i) => (
             <div key={i} style={{
               display: "flex", justifyContent: "space-between", alignItems: "center",
-              padding: "10px 0", borderBottom: i < 3 ? `1px solid ${T.borderLight}` : "none",
+              padding: "10px 0", borderBottom: i < priceDetails.length - 1 ? `1px solid ${T.borderLight}` : "none",
               fontSize: 12.5,
             }}>
               <span style={{ color: T.sub, flex: 1, marginRight: 12 }}>{r.label}</span>
