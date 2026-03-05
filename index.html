@@ -1,15 +1,22 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+  <meta charset="UTF-8">
+  <!-- 모바일에서도 예쁘게 보이도록 뷰포트 추가 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+  <style>
+    body { margin: 0; padding: 0; }
+  </style>
 </head>
 <body>
   <div id="root"></div>
   
   <script type="text/babel">
-import { useState, useEffect, useRef } from "react";
+// 1. import 대신 전역 React 객체에서 기능들을 꺼내옵니다.
+const { useState, useEffect, useRef } = React;
 
 // ─── Design tokens ───
 const T = {
@@ -37,7 +44,7 @@ const font = `'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', san
 
 // ─── Countdown hook ───
 function useCountdown(targetDate) {
-  const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 });
+  const[timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 });
   useEffect(() => {
     const tick = () => {
       const now = new Date();
@@ -79,33 +86,33 @@ const Divider = () => (
   <div style={{ height: 1, background: T.borderLight, margin: "28px 0" }} />
 );
 
-// ─── Main component ───
-export default function PurchaseLanding() {
+// 2. export default를 제거합니다.
+function PurchaseLanding() {
   const [concept, setConcept] = useState(null);
   const [hotel, setHotel] = useState(null);
   const [date, setDate] = useState(null);
-  const [expandedFaq, setExpandedFaq] = useState(null);
+  const[expandedFaq, setExpandedFaq] = useState(null);
   const [showToast, setShowToast] = useState(false);
 
   // Quiz state
   const [quizStep, setQuizStep] = useState(0); // 0=intro, 1~3=questions, 4=result
-  const [quizAnswers, setQuizAnswers] = useState([]);
+  const[quizAnswers, setQuizAnswers] = useState([]);
   const [quizResult, setQuizResult] = useState(null);
   const step1Ref = useRef(null);
 
-  const quizQuestions = [
+  const quizQuestions =[
     {
       q: "발리에서의 첫 아침, 어떤 소리와 함께 눈뜨고 싶어요?",
-      options: [
+      options:[
         { emoji: "🌊", text: "잔잔한 파도 소리와 새하얀 커튼 사이로 들어오는 햇살", tags: ["ho"] },
         { emoji: "🌿", text: "새소리와 정글 속 물 흐르는 소리", tags: ["sup"] },
         { emoji: "🎵", text: "감각적인 카페 음악과 서퍼들의 활기찬 에너지", tags: ["hip"] },
-        { emoji: "🤔", text: "솔직히 다 좋아서 못 고르겠어요", tags: ["mix"] },
+        { emoji: "🤔", text: "솔직히 다 좋아서 못 고르겠어요", tags:["mix"] },
       ],
     },
     {
       q: "여행에서 가장 기대되는 순간은?",
-      options: [
+      options:[
         { emoji: "🍹", text: "풀장 베드에 누워 칵테일 마시며 아무것도 안 하는 시간", tags: ["ho"] },
         { emoji: "🧘", text: "초록 속에서 요가하고 쿠킹 클래스 듣는 힐링 타임", tags: ["sup"] },
         { emoji: "📸", text: "비치클럽에서 선셋 보며 인생샷 남기는 순간", tags: ["hip"] },
@@ -114,9 +121,9 @@ export default function PurchaseLanding() {
     },
     {
       q: "여행 후 SNS에 올릴 한 장을 고른다면?",
-      options: [
+      options:[
         { emoji: "🏖️", text: "프라이빗 비치에서 찍은 리조트 인증샷", tags: ["ho"] },
-        { emoji: "🌴", text: "열대 우림이 병풍처럼 펼쳐진 풀빌라 사진", tags: ["sup"] },
+        { emoji: "🌴", text: "열대 우림이 병풍처럼 펼쳐진 풀빌라 사진", tags:["sup"] },
         { emoji: "🌅", text: "짱구 해변 오렌지빛 선셋 + 칵테일 한 잔", tags: ["hip"] },
         { emoji: "🎞️", text: "정글 + 비치 + 카페 = 알찬 하이라이트 콜라주", tags: ["mix"] },
       ],
@@ -126,14 +133,13 @@ export default function PurchaseLanding() {
   const getQuizResult = (answers) => {
     const count = { ho: 0, sup: 0, hip: 0, mix: 0 };
     answers.forEach(a => a.tags.forEach(t => count[t]++));
-    // mix answers always win if selected, otherwise highest
     if (count.mix >= 2) return "mix";
     const sorted = Object.entries(count).sort((a, b) => b[1] - a[1]);
     return sorted[0][0];
   };
 
   const handleQuizAnswer = (option) => {
-    const newAnswers = [...quizAnswers, option];
+    const newAnswers =[...quizAnswers, option];
     setQuizAnswers(newAnswers);
     if (newAnswers.length >= 3) {
       const result = getQuizResult(newAnswers);
@@ -147,7 +153,7 @@ export default function PurchaseLanding() {
   const applyQuizResult = () => {
     setConcept(quizResult);
     setHotel(null);
-    setQuizStep(5); // done, hide quiz
+    setQuizStep(5); 
     setTimeout(() => {
       step1Ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 200);
@@ -166,18 +172,15 @@ export default function PurchaseLanding() {
     mix: { emoji: "⚖️", name: "반반 믹스매치 파", area: "우붓 + 짱구/스미냑", desc: "힐링도 하고 싶고 핫플도 못 참는 당신! 2박은 정글 힐링, 2박은 핫플 투어로 발리의 매력을 빠짐없이 쏙쏙 뽑아 먹는 완벽한 코스에요." },
   };
 
-  // 3/8 24:00 KST
   const deadline = new Date("2026-03-08T15:00:00Z");
   const countdown = useCountdown(deadline);
 
-  // Toast animation
   useEffect(() => {
     const id = setTimeout(() => setShowToast(true), 3000);
     return () => clearTimeout(id);
   }, []);
 
-  // ─── DATA ───
-  const concepts = [
+  const concepts =[
     { id: "ho", emoji: "🌊", name: "호캉스", area: "누사두아", desc: "리조트 밖은 위험해! 궁극의 휴양", rec: false },
     { id: "sup", emoji: "🌿", name: "숲캉스", area: "우붓", desc: "정글 속 딥 힐링", rec: false },
     { id: "hip", emoji: "🏄‍♀️", name: "힙캉스", area: "스미냑·짱구", desc: "트렌디한 발리의 중심", rec: false },
@@ -185,43 +188,43 @@ export default function PurchaseLanding() {
   ];
 
   const hotelOptions = {
-    ho: [
-      { id: "ho1", name: "페어필드 1박 + 그랜드 미라지 3박", tags: "#가족여행 #커플여행 #부대시설맛집", perks: ["전 일정 조식 포함", "웰컴 과일(또는 케이크)", "초대형 인피니티 풀 & 프라이빗 비치"] },
-      { id: "ho2", name: "페어필드 1박 + 파라디수스 3박", tags: "#올인클루시브 #신상급컨디션", perks: ["전 일정 조식 포함", "올 인클루시브 (전 일정 식음료 무제한!)", "최근 리모델링 완료"] },
+    ho:[
+      { id: "ho1", name: "페어필드 1박 + 그랜드 미라지 3박", tags: "#가족여행 #커플여행 #부대시설맛집", perks:["전 일정 조식 포함", "웰컴 과일(또는 케이크)", "초대형 인피니티 풀 & 프라이빗 비치"] },
+      { id: "ho2", name: "페어필드 1박 + 파라디수스 3박", tags: "#올인클루시브 #신상급컨디션", perks:["전 일정 조식 포함", "올 인클루시브 (전 일정 식음료 무제한!)", "최근 리모델링 완료"] },
     ],
-    sup: [
-      { id: "su1", name: "페어필드 1박 + 부미키나르 3박", tags: "#정글 #자연 #신상 🆕한국 최초 공개!", perks: ["전 일정 조식 포함", "런치 2인 1회 + 무료 미니바 셋업 1회", "프라이빗 풀 + 스카이라이트 빌라"] },
-      { id: "su2", name: "페어필드 1박 + 만다파 리츠칼튼 3박", tags: "#럭셔리 #리버뷰 #하이엔드", perks: ["전 일정 조식 포함", "허벌 스팀, 사우나, 바이탈리티 풀", "우붓 센트럴 무료 셔틀"] },
+    sup:[
+      { id: "su1", name: "페어필드 1박 + 부미키나르 3박", tags: "#정글 #자연 #신상 🆕한국 최초 공개!", perks:["전 일정 조식 포함", "런치 2인 1회 + 무료 미니바 셋업 1회", "프라이빗 풀 + 스카이라이트 빌라"] },
+      { id: "su2", name: "페어필드 1박 + 만다파 리츠칼튼 3박", tags: "#럭셔리 #리버뷰 #하이엔드", perks:["전 일정 조식 포함", "허벌 스팀, 사우나, 바이탈리티 풀", "우붓 센트럴 무료 셔틀"] },
     ],
-    hip: [
-      { id: "hi1", name: "페어필드 1박 + 홀리데이 인 짱구 3박", tags: "#짱구핫플 #선셋뷰 #인피니티풀", perks: ["전 일정 조식 포함", "루프탑 인피니티 풀 선셋 뷰", "짱구 해변 1열 직관"] },
-      { id: "hi2", name: "페어필드 1박 + 호텔 인디고 스미냑 3박", tags: "#힙플레이스 #디자인 #비치클럽", perks: ["전 일정 조식 포함", "식사(나시고랭+아이스티) 2인 1회", "스미냑 핫플 한가운데 위치"] },
+    hip:[
+      { id: "hi1", name: "페어필드 1박 + 홀리데이 인 짱구 3박", tags: "#짱구핫플 #선셋뷰 #인피니티풀", perks:["전 일정 조식 포함", "루프탑 인피니티 풀 선셋 뷰", "짱구 해변 1열 직관"] },
+      { id: "hi2", name: "페어필드 1박 + 호텔 인디고 스미냑 3박", tags: "#힙플레이스 #디자인 #비치클럽", perks:["전 일정 조식 포함", "식사(나시고랭+아이스티) 2인 1회", "스미냑 핫플 한가운데 위치"] },
     ],
-    mix: [
-      { id: "mx1", label: "힙+숲", name: "홀리데이 인 짱구 2박 + 부미키나르 2박", perks: ["전 일정 조식 포함", "부미키나르 런치 2인 1회 + 미니바", "홀리데이 루프탑 인피니티 풀"] },
-      { id: "mx2", label: "힙+숲", name: "홀리데이 인 짱구 2박 + 만다파 리츠칼튼 2박", perks: ["전 일정 조식 포함", "허벌 스팀, 사우나, 바이탈리티 풀", "홀리데이 루프탑 인피니티 풀"] },
-      { id: "mx3", label: "힙+호", name: "홀리데이 인 짱구 2박 + 파라디수스 2박", perks: ["전 일정 조식 포함", "파라디수스 올 인클루시브", "홀리데이 루프탑 인피니티 풀"] },
-      { id: "mx4", label: "호+숲", name: "그랜드 미라지 2박 + 부미키나르 2박", perks: ["전 일정 조식 포함", "부미키나르 런치 2인 1회 + 미니바", "그랜드 미라지 초대형 인피니티 풀"] },
-      { id: "mx5", label: "호+숲", name: "그랜드 미라지 2박 + 만다파 리츠칼튼 2박", perks: ["전 일정 조식 포함", "허벌 스팀, 사우나, 바이탈리티 풀", "그랜드 미라지 초대형 인피니티 풀"] },
-      { id: "mx6", label: "호+힙", name: "그랜드 미라지 2박 + 인디고 스미냑 2박", perks: ["전 일정 조식 포함", "인디고 식사(나시고랭+아이스티) 2인", "그랜드 미라지 초대형 인피니티 풀"] },
+    mix:[
+      { id: "mx1", label: "힙+숲", name: "홀리데이 인 짱구 2박 + 부미키나르 2박", perks:["전 일정 조식 포함", "부미키나르 런치 2인 1회 + 미니바", "홀리데이 루프탑 인피니티 풀"] },
+      { id: "mx2", label: "힙+숲", name: "홀리데이 인 짱구 2박 + 만다파 리츠칼튼 2박", perks:["전 일정 조식 포함", "허벌 스팀, 사우나, 바이탈리티 풀", "홀리데이 루프탑 인피니티 풀"] },
+      { id: "mx3", label: "힙+호", name: "홀리데이 인 짱구 2박 + 파라디수스 2박", perks:["전 일정 조식 포함", "파라디수스 올 인클루시브", "홀리데이 루프탑 인피니티 풀"] },
+      { id: "mx4", label: "호+숲", name: "그랜드 미라지 2박 + 부미키나르 2박", perks:["전 일정 조식 포함", "부미키나르 런치 2인 1회 + 미니바", "그랜드 미라지 초대형 인피니티 풀"] },
+      { id: "mx5", label: "호+숲", name: "그랜드 미라지 2박 + 만다파 리츠칼튼 2박", perks:["전 일정 조식 포함", "허벌 스팀, 사우나, 바이탈리티 풀", "그랜드 미라지 초대형 인피니티 풀"] },
+      { id: "mx6", label: "호+힙", name: "그랜드 미라지 2박 + 인디고 스미냑 2박", perks:["전 일정 조식 포함", "인디고 식사(나시고랭+아이스티) 2인", "그랜드 미라지 초대형 인피니티 풀"] },
     ],
   };
 
-  const dates = [
+  const dates =[
     { id: "d1", label: "4/12(토) — 4/16(수)", seats: 4, hot: true },
     { id: "d2", label: "4/19(토) — 4/23(수)", seats: 12, hot: false },
     { id: "d3", label: "4/26(토) — 4/30(수)", seats: 8, hot: false },
     { id: "d4", label: "5/3(토) — 5/7(수)", seats: 18, hot: false },
   ];
 
-  const faqs = [
+  const faqs =[
     { q: "예약 확정은 언제 되나요?", a: "예약 접수 후 영업일 기준 5일 이내에 순차적으로 확정 처리됩니다. 객실 또는 항공 좌석이 마감되어 해당 일자에 진행이 불가할 경우, 개별 연락을 통해 가능한 대체 일자를 안내해 드립니다." },
     { q: "침대 타입(트윈/더블)을 선택할 수 있나요?", a: "요청해 주시면 호텔 측에 사전 전달해 드리나, 당일 호텔 객실 상황에 따라 100% 개런티는 불가한 점 양해 부탁드립니다." },
     { q: "체크아웃 후 프라이빗 차량 서비스는 어떻게 이용하나요?", a: "마지막 날 체크아웃 후 전용 차량과 기사가 12시간 동안 배정됩니다. 체크아웃 → 자유 관광/쇼핑/맛집 등 원하시는 일정 소화 → 공항 이동까지 한 번에 해결됩니다. 별도 교통비 걱정 없이 마지막 날까지 알차게 보내실 수 있습니다." },
     { q: "숙소 간 이동(2박+2박 코스)은 어떻게 하나요?", a: "그랩/고젝 등 현지 차량 호출 앱으로 약 30분~1시간 이내에 이동 가능합니다. 보람's 가이드에서 앱 사용법과 최적 이동 동선을 상세히 안내해 드려요." },
   ];
 
-  const visibleHotels = concept ? (hotelOptions[concept] || []) : [];
+  const visibleHotels = concept ? (hotelOptions[concept] || []) :[];
   const progress = concept ? (hotel ? (date ? 3 : 2) : 1) : 0;
 
   return (
@@ -301,7 +304,6 @@ export default function PurchaseLanding() {
             border: `1px solid ${T.border}`, marginBottom: 28,
             boxShadow: "0 2px 16px rgba(0,0,0,0.04)",
           }}>
-            {/* Quiz header */}
             <div style={{
               background: `linear-gradient(135deg, ${T.warmBg} 0%, #FFF7F0 100%)`,
               padding: "20px 20px 16px",
@@ -324,7 +326,6 @@ export default function PurchaseLanding() {
               )}
             </div>
 
-            {/* Quiz progress dots */}
             {quizStep >= 1 && quizStep <= 3 && (
               <div style={{
                 display: "flex", justifyContent: "center", gap: 8,
@@ -342,7 +343,6 @@ export default function PurchaseLanding() {
 
             <div style={{ padding: "18px 20px 22px" }}>
 
-              {/* Intro */}
               {quizStep === 0 && (
                 <div style={{ textAlign: "center" }}>
                   <div style={{
@@ -368,7 +368,6 @@ export default function PurchaseLanding() {
                 </div>
               )}
 
-              {/* Questions 1~3 */}
               {quizStep >= 1 && quizStep <= 3 && (() => {
                 const qData = quizQuestions[quizStep - 1];
                 return (
@@ -401,7 +400,6 @@ export default function PurchaseLanding() {
                 );
               })()}
 
-              {/* Result */}
               {quizStep === 4 && quizResult && (() => {
                 const r = resultMap[quizResult];
                 return (
@@ -484,7 +482,7 @@ export default function PurchaseLanding() {
             );
           })}
         </div>
-        </div> {/* end step1Ref */}
+        </div>
 
         {/* ═══ SEC 2: Hotels ═══ */}
         {concept && (
@@ -676,7 +674,6 @@ export default function PurchaseLanding() {
         <Divider />
         <SectionTitle title="🛫 예약 전 필수 확인 사항" />
 
-        {/* Collapsible info panels */}
         {[
           {
             title: "항공 안내 (에어텔 기준)",
@@ -920,7 +917,10 @@ export default function PurchaseLanding() {
     </div>
   );
 }
-    ReactDOM.render(<App />, document.getElementById('root'));
+
+// 3. 리액트 18 버전에 맞게 컴포넌트를 올바르게 렌더링합니다. (App을 PurchaseLanding으로 수정)
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<PurchaseLanding />);
   </script>
 </body>
 </html>
