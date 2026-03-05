@@ -333,7 +333,7 @@ function PurchaseLanding() {
                 }}>MINI TEST</span>
               </div>
               <div style={{ fontSize: 17, fontWeight: 800, color: T.text, lineHeight: 1.4 }}>
-                🔍 나에게 찰떡인<br />발리 여행 컨셉 찾기!
+                🔍 나에게 찰떡인 발리 여행 컨셉 찾기!
               </div>
               {quizStep === 0 && (
                 <p style={{ fontSize: 12, color: T.sub, margin: "6px 0 0", lineHeight: 1.5 }}>
@@ -593,8 +593,8 @@ function PurchaseLanding() {
         {[
           { icon: "🍳", name: "전 일정 호텔 조식 4회", val: "약 250,000원" },
           { icon: "🚐", name: "체크아웃 후 12시간 프라이빗 차량 서비스", val: "약 150,000원" },
-          { icon: "🛡️", name: "1억 원 프리미엄 여행자보험", val: "약 20,000원" },
           { icon: "📱", name: "현지 eSIM 1GB 5일권 (2인)", val: "약 20,000원" },
+          { icon: "🛡️", name: "1억 원 프리미엄 여행자보험", val: "약 20,000원" },
           { icon: "📍", name: "보람's 발리 찐핫플 구글맵", val: "비매품" },
           { icon: "📝", name: "컨셉별 완벽 일정표", val: "비매품" },
         ].map((b, i) => (
@@ -622,10 +622,11 @@ function PurchaseLanding() {
             animation: "pulse 1.5s infinite",
           }} />
           <span style={{ fontSize: 12, fontWeight: 600, color: T.red, transition: "all 0.3s" }}>
-            지금 {viewers}명이 이 상품을 보고 있어요
+            지금 {viewers}명이 여행 상품을 보고 있어요
           </span>
         </div>
-
+        <Divider />
+        
         <SectionTitle title="💬 기획자 리얼 답사 후기" />
         {[
           { name: "김지연 기획자 (MD)", text: "우붓+짱구 조합은 제가 직접 다녀오고 확신해서 넣었습니다. 부미키나르의 정글 뷰는 사진에 안 담겨요. 아침에 새소리 들으며 일어나는 경험, 그리고 짱구 홀리데이 인에서의 선셋은 완벽한 밸런스입니다.", date: "2025.10 발리 현지 답사" },
@@ -851,9 +852,10 @@ function PurchaseLanding() {
               ))}
             </div>
           </div>
-
+          <Divider />
+          
           <div style={{ fontSize: 14, color: T.red, fontWeight: 700, marginBottom: 5 }}>
-            이 엄청난 혜택은 3/8(일) 자정까지만 제공됩니다
+            이 사전 혜택은 3/8(일) 자정까지만 제공됩니다
           </div>
           <div style={{ fontSize: 12, color: T.sub, marginBottom: 20, lineHeight: 1.5 }}>
             사전 이벤트 기간: <b>3월 8일(일) 18:00 ~ 24:00 (단 6시간)</b><br />
