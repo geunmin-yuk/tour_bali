@@ -2,11 +2,11 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <!-- 모바일에서도 예쁘게 보이도록 뷰포트 추가 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+  <!-- 번역기(Babel)를 구버전에서 최신 버전으로 교체했습니다! -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
     body { margin: 0; padding: 0; }
   </style>
@@ -15,36 +15,20 @@
   <div id="root"></div>
   
   <script type="text/babel">
-// 1. import 대신 전역 React 객체에서 기능들을 꺼내옵니다.
 const { useState, useEffect, useRef } = React;
 
-// ─── Design tokens ───
 const T = {
-  bg: "#FAF8F5",
-  card: "#FFFFFF",
-  green: "#1A6B4A",
-  greenDark: "#0E4832",
-  greenLight: "#E6F4ED",
-  greenMid: "#D0EADB",
-  warm: "#C9956B",
-  warmLight: "#FFF7F0",
-  warmBg: "#FAF0E6",
-  red: "#C0392B",
-  redLight: "#FFF0ED",
-  gold: "#B08530",
-  goldLight: "#FEF9EF",
-  text: "#1C1C1C",
-  sub: "#555555",
-  muted: "#999999",
-  border: "#E8E4DF",
-  borderLight: "#F2EFEA",
+  bg: "#FAF8F5", card: "#FFFFFF", green: "#1A6B4A", greenDark: "#0E4832",
+  greenLight: "#E6F4ED", greenMid: "#D0EADB", warm: "#C9956B", warmLight: "#FFF7F0",
+  warmBg: "#FAF0E6", red: "#C0392B", redLight: "#FFF0ED", gold: "#B08530",
+  goldLight: "#FEF9EF", text: "#1C1C1C", sub: "#555555", muted: "#999999",
+  border: "#E8E4DF", borderLight: "#F2EFEA",
 };
 
 const font = `'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
 
-// ─── Countdown hook ───
 function useCountdown(targetDate) {
-  const[timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 });
+  const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 });
   useEffect(() => {
     const tick = () => {
       const now = new Date();
@@ -59,11 +43,10 @@ function useCountdown(targetDate) {
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [targetDate]);
+  },[targetDate]);
   return timeLeft;
 }
 
-// ─── Reusable components ───
 const Badge = ({ children, bg, color }) => (
   <span style={{
     display: "inline-block", fontSize: 10, fontWeight: 700, letterSpacing: 0.3,
@@ -86,18 +69,16 @@ const Divider = () => (
   <div style={{ height: 1, background: T.borderLight, margin: "28px 0" }} />
 );
 
-// 2. export default를 제거합니다.
 function PurchaseLanding() {
   const [concept, setConcept] = useState(null);
   const [hotel, setHotel] = useState(null);
   const [date, setDate] = useState(null);
-  const[expandedFaq, setExpandedFaq] = useState(null);
+  const [expandedFaq, setExpandedFaq] = useState(null);
   const [showToast, setShowToast] = useState(false);
 
-  // Quiz state
-  const [quizStep, setQuizStep] = useState(0); // 0=intro, 1~3=questions, 4=result
-  const[quizAnswers, setQuizAnswers] = useState([]);
-  const [quizResult, setQuizResult] = useState(null);
+  const [quizStep, setQuizStep] = useState(0); 
+  const [quizAnswers, setQuizAnswers] = useState([]);
+  const[quizResult, setQuizResult] = useState(null);
   const step1Ref = useRef(null);
 
   const quizQuestions =[
@@ -107,7 +88,7 @@ function PurchaseLanding() {
         { emoji: "🌊", text: "잔잔한 파도 소리와 새하얀 커튼 사이로 들어오는 햇살", tags: ["ho"] },
         { emoji: "🌿", text: "새소리와 정글 속 물 흐르는 소리", tags: ["sup"] },
         { emoji: "🎵", text: "감각적인 카페 음악과 서퍼들의 활기찬 에너지", tags: ["hip"] },
-        { emoji: "🤔", text: "솔직히 다 좋아서 못 고르겠어요", tags:["mix"] },
+        { emoji: "🤔", text: "솔직히 다 좋아서 못 고르겠어요", tags: ["mix"] },
       ],
     },
     {
@@ -123,8 +104,8 @@ function PurchaseLanding() {
       q: "여행 후 SNS에 올릴 한 장을 고른다면?",
       options:[
         { emoji: "🏖️", text: "프라이빗 비치에서 찍은 리조트 인증샷", tags: ["ho"] },
-        { emoji: "🌴", text: "열대 우림이 병풍처럼 펼쳐진 풀빌라 사진", tags:["sup"] },
-        { emoji: "🌅", text: "짱구 해변 오렌지빛 선셋 + 칵테일 한 잔", tags: ["hip"] },
+        { emoji: "🌴", text: "열대 우림이 병풍처럼 펼쳐진 풀빌라 사진", tags: ["sup"] },
+        { emoji: "🌅", text: "짱구 해변 오렌지빛 선셋 + 칵테일 한 잔", tags:["hip"] },
         { emoji: "🎞️", text: "정글 + 비치 + 카페 = 알찬 하이라이트 콜라주", tags: ["mix"] },
       ],
     },
@@ -139,7 +120,7 @@ function PurchaseLanding() {
   };
 
   const handleQuizAnswer = (option) => {
-    const newAnswers =[...quizAnswers, option];
+    const newAnswers = [...quizAnswers, option];
     setQuizAnswers(newAnswers);
     if (newAnswers.length >= 3) {
       const result = getQuizResult(newAnswers);
@@ -155,7 +136,10 @@ function PurchaseLanding() {
     setHotel(null);
     setQuizStep(5); 
     setTimeout(() => {
-      step1Ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      // 에러가 나던 부분을 안전하게 수정했습니다!
+      if (step1Ref.current) {
+        step1Ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     }, 200);
   };
 
@@ -229,8 +213,6 @@ function PurchaseLanding() {
 
   return (
     <div style={{ fontFamily: font, background: T.bg, minHeight: "100vh", maxWidth: 480, margin: "0 auto", position: "relative" }}>
-
-      {/* ═══ Toast notification ═══ */}
       {showToast && (
         <div onClick={() => setShowToast(false)} style={{
           position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)",
@@ -252,7 +234,6 @@ function PurchaseLanding() {
         </div>
       )}
 
-      {/* ═══ Header ═══ */}
       <div style={{
         background: `linear-gradient(160deg, ${T.green} 0%, ${T.greenDark} 100%)`,
         padding: "36px 24px 28px", color: "#fff", position: "relative", overflow: "hidden",
@@ -276,7 +257,6 @@ function PurchaseLanding() {
         </p>
       </div>
 
-      {/* ═══ Progress bar ═══ */}
       <div style={{ padding: "16px 20px 0" }}>
         <div style={{ display: "flex", gap: 4 }}>
           {["컨셉 선택", "숙소 선택", "일정 선택"].map((s, i) => (
@@ -296,8 +276,6 @@ function PurchaseLanding() {
       </div>
 
       <div style={{ padding: "20px 20px 140px" }}>
-
-        {/* ═══ QUIZ: 나에게 맞는 컨셉 찾기 ═══ */}
         {quizStep < 5 && (
           <div style={{
             background: "#fff", borderRadius: 18, overflow: "hidden",
@@ -342,7 +320,6 @@ function PurchaseLanding() {
             )}
 
             <div style={{ padding: "18px 20px 22px" }}>
-
               {quizStep === 0 && (
                 <div style={{ textAlign: "center" }}>
                   <div style={{
@@ -442,10 +419,8 @@ function PurchaseLanding() {
           </div>
         )}
 
-        {/* ═══ SEC 1: Concept ═══ */}
         <div ref={step1Ref}>
         <SectionTitle step="STEP 1" title="나의 여행 컨셉은?" sub="하나를 선택하면 맞춤 숙소와 가격이 표시돼요" />
-
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {concepts.map(c => {
             const sel = concept === c.id;
@@ -484,7 +459,6 @@ function PurchaseLanding() {
         </div>
         </div>
 
-        {/* ═══ SEC 2: Hotels ═══ */}
         {concept && (
           <>
             <Divider />
@@ -494,7 +468,6 @@ function PurchaseLanding() {
                 : "모든 옵션에 페어필드 사우스 꾸따 0.5박(공항 10분) 기본 포함"
               }
             />
-
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {visibleHotels.map(h => {
                 const sel = hotel === h.id;
@@ -507,17 +480,12 @@ function PurchaseLanding() {
                     transition: "all 0.2s",
                     boxShadow: sel ? `0 2px 12px rgba(26,107,74,0.08)` : "none",
                   }}>
-                    {h.label && (
-                      <Badge bg={T.goldLight} color={T.gold}>{h.label}</Badge>
-                    )}
-                    {h.tags && (
-                      <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>{h.tags}</div>
-                    )}
+                    {h.label && <Badge bg={T.goldLight} color={T.gold}>{h.label}</Badge>}
+                    {h.tags && <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>{h.tags}</div>}
                     <div style={{
                       fontSize: 14, fontWeight: 700, color: T.text,
                       margin: h.label || h.tags ? "6px 0 0" : 0, lineHeight: 1.4,
                     }}>{h.name}</div>
-
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 5, margin: "10px 0" }}>
                       {h.perks.map((p, j) => (
                         <span key={j} style={{
@@ -526,7 +494,6 @@ function PurchaseLanding() {
                         }}>✓ {p}</span>
                       ))}
                     </div>
-
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <div style={{ fontSize: 16, fontWeight: 800, color: T.text }}>
                         ────── <span style={{ fontSize: 12, fontWeight: 500 }}>원~</span>
@@ -544,12 +511,10 @@ function PurchaseLanding() {
           </>
         )}
 
-        {/* ═══ SEC 3: Dates ═══ */}
         {hotel && (
           <>
             <Divider />
             <SectionTitle step="STEP 3" title="출발일을 선택하세요" sub="4월~6월 출발 가능 · 날짜별 가격이 달라요" />
-
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {dates.map(d => {
                 const sel = date === d.id;
@@ -579,7 +544,6 @@ function PurchaseLanding() {
           </>
         )}
 
-        {/* ═══ Benefits ═══ */}
         <Divider />
         <div style={{
           background: T.greenLight, borderRadius: 14, padding: "18px 18px 14px", marginBottom: 14,
@@ -608,7 +572,6 @@ function PurchaseLanding() {
           </div>
         ))}
 
-        {/* ═══ Social Proof ═══ */}
         <Divider />
         <div style={{
           display: "flex", alignItems: "center", gap: 8,
@@ -638,7 +601,6 @@ function PurchaseLanding() {
           </div>
         ))}
 
-        {/* ═══ Price breakdown ═══ */}
         <Divider />
         <SectionTitle title="📋 가격 구성 상세" />
         <div style={{
@@ -670,10 +632,8 @@ function PurchaseLanding() {
           </div>
         </div>
 
-        {/* ═══ Info section ═══ */}
         <Divider />
         <SectionTitle title="🛫 예약 전 필수 확인 사항" />
-
         {[
           {
             title: "항공 안내 (에어텔 기준)",
@@ -769,10 +729,8 @@ function PurchaseLanding() {
           );
         })}
 
-        {/* ═══ FAQ ═══ */}
         <Divider />
         <SectionTitle title="❓ 자주 묻는 질문 (FAQ)" />
-
         {faqs.map((f, i) => {
           const open = expandedFaq === `faq-${i}`;
           return (
@@ -801,7 +759,6 @@ function PurchaseLanding() {
           );
         })}
 
-        {/* ═══ Booking process ═══ */}
         <div style={{
           background: "#fff", borderRadius: 14, padding: "18px 16px", marginTop: 12,
           border: `1px solid ${T.borderLight}`,
@@ -831,7 +788,6 @@ function PurchaseLanding() {
           ))}
         </div>
 
-        {/* ═══ Countdown + CTA ═══ */}
         <Divider />
         <div style={{ textAlign: "center" }}>
           <div style={{
@@ -878,7 +834,6 @@ function PurchaseLanding() {
         </div>
       </div>
 
-      {/* ═══ Sticky CTA bar ═══ */}
       <div style={{
         position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
         width: "100%", maxWidth: 480,
@@ -903,22 +858,14 @@ function PurchaseLanding() {
         </button>
       </div>
 
-      {/* ═══ Keyframes ═══ */}
       <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
-        }
-        @keyframes slideDown {
-          from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
-          to { transform: translateX(-50%) translateY(0); opacity: 1; }
-        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        @keyframes slideDown { from { transform: translateX(-50%) translateY(-20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
       `}</style>
     </div>
   );
 }
 
-// 3. 리액트 18 버전에 맞게 컴포넌트를 올바르게 렌더링합니다. (App을 PurchaseLanding으로 수정)
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<PurchaseLanding />);
   </script>
