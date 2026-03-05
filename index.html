@@ -86,27 +86,28 @@ function PurchaseLanding() {
     const updateViewers = () => {
       const now = new Date();
       const h = now.getHours();
-      let base = 50;
+      let base = 20;
       
-      // 1. 시간대별 기본값 (저녁 오픈 시간에 가장 높음)
-      if (h >= 18 && h <= 23) base = 130 + (h - 18) * 15; // 130 ~ 205
-      else if (h >= 9 && h <= 17) base = 70 + (h - 9) * 5; // 70 ~ 110
-      else if (h >= 0 && h <= 2) base = 60; // 심야
-      else base = 25; // 새벽
+      // 1. 640명 참여 모수를 고려하여 동시접속자 수를 현실적인 10~40명대로 축소
+      if (h >= 18 && h <= 23) base = 35 + (h - 18) * 2; // 피크타임: 35 ~ 45명
+      else if (h >= 9 && h <= 17) base = 20 + (h - 9) * 1; // 낮 시간: 20 ~ 28명
+      else if (h >= 0 && h <= 2) base = 15; // 심야
+      else base = 8; // 새벽
       
-      // 2. 분(Minute)에 따른 자연스러운 파동 (사인 곡선 이용, 60분 주기)
-      const wave = Math.sin((now.getMinutes() / 60) * Math.PI) * 20;
+      // 2. 파동 폭 축소 (±8명)
+      const wave = Math.sin((now.getMinutes() / 60) * Math.PI) * 8;
       
-      // 3. 약간의 랜덤 노이즈 (-5 ~ +5)
-      const noise = Math.floor(Math.random() * 11) - 5;
+      // 3. 랜덤 노이즈 축소 (-3 ~ +3)
+      const noise = Math.floor(Math.random() * 7) - 3;
       
-      setViewers(Math.floor(base + wave + noise));
+      // 최소 5명은 보장하도록 Math.max 처리
+      setViewers(Math.max(5, Math.floor(base + wave + noise)));
     };
 
     updateViewers();
-    const intervalId = setInterval(updateViewers, 3000); // 3초마다 업데이트
+    const intervalId = setInterval(updateViewers, 3000); 
     return () => clearInterval(intervalId);
-  }, []);
+  },[]);
 
   const quizQuestions =[
     {
@@ -586,13 +587,14 @@ function PurchaseLanding() {
           background: T.greenLight, borderRadius: 14, padding: "18px 18px 14px", marginBottom: 14,
         }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: T.green, marginBottom: 3 }}>💰 내가 무료로 받는 혜택 총합</div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: T.greenDark }}>약 240,000<span style={{ fontSize: 14, fontWeight: 600 }}>원 상당</span></div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: T.greenDark }}>약 440,000<span style={{ fontSize: 14, fontWeight: 600 }}>원 상당</span></div>
         </div>
 
         {[
-          { icon: "🍳", name: "전 일정 호텔 조식 4회", val: "약 180,000원" },
-          { icon: "🚐", name: "체크아웃 후 12시간 프라이빗 차량 서비스", val: "약 40,000원" },
+          { icon: "🍳", name: "전 일정 호텔 조식 4회", val: "약 250,000원" },
+          { icon: "🚐", name: "체크아웃 후 12시간 프라이빗 차량 서비스", val: "약 150,000원" },
           { icon: "🛡️", name: "1억 원 프리미엄 여행자보험", val: "약 20,000원" },
+          { icon: "📱", name: "현지 eSIM 1GB 5일권 (2인)", val: "약 20,000원" },
           { icon: "📍", name: "보람's 발리 찐핫플 구글맵", val: "비매품" },
           { icon: "📝", name: "컨셉별 완벽 일정표", val: "비매품" },
         ].map((b, i) => (
@@ -851,11 +853,12 @@ function PurchaseLanding() {
           </div>
 
           <div style={{ fontSize: 14, color: T.red, fontWeight: 700, marginBottom: 5 }}>
-            이 가격은 3/8(일) 자정 이후 만날 수 없습니다
+            이 엄청난 혜택은 3/8(일) 자정까지만 제공됩니다
           </div>
           <div style={{ fontSize: 12, color: T.sub, marginBottom: 20, lineHeight: 1.5 }}>
             사전 이벤트 기간: <b>3월 8일(일) 18:00 ~ 24:00 (단 6시간)</b><br />
-            종료 후 동일 상품 가격: <b>약 +150,000원 이상 인상</b>
+            종료 후 예약 시: <b>약 44만 원 상당 혜택 전면 소멸</b>
+            <span style={{ fontSize: 11, color: T.muted }}>(프라이빗 차량, eSIM, 선착순 혜택 등 미제공)</span>
           </div>
 
           <button style={{
