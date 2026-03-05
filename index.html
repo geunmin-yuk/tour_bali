@@ -134,11 +134,6 @@ function PurchaseLanding() {
       clearTimeout(hideTimeoutId);
     };
   },[]);
-    
-    updateViewers();
-    const intervalId = setInterval(updateViewers, 3000); 
-    return () => clearInterval(intervalId);
-  },[]);
 
   const quizQuestions =[
     {
